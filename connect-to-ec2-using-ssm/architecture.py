@@ -1,4 +1,4 @@
-from diagrams import Diagram,Cluster, Edge
+from diagrams import Diagram,Cluster,Edge
 from diagrams.aws.compute import EC2
 from diagrams.custom import Custom
 
