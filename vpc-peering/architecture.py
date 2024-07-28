@@ -9,6 +9,7 @@ from diagrams.onprem.iac import Terraform
 with Diagram("VPC Peering", show=False, direction="LR"):
     with Cluster('AWS'):
         vpcPeering = VPC("VPC Peering")
+        person = User("Person")
         with Cluster('VPC A'):
             vpcA = VPC('VPC-A')
             with Cluster('Private Subnet A'):
@@ -18,3 +19,4 @@ with Diagram("VPC Peering", show=False, direction="LR"):
             with Cluster('Private Subnet B'):
                 ec2B = EC2('EC2 B')
         vpcA << vpcPeering >> vpcB
+        person >> Edge(label='SSM') >> ec2A
