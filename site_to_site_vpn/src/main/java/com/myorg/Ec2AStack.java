@@ -8,6 +8,8 @@ import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.constructs.Construct;
 
+import java.util.List;
+
 public final class Ec2AStack extends Stack {
     private final Instance ec2A;
 
@@ -28,7 +30,7 @@ public final class Ec2AStack extends Stack {
         // Create IAM Role for EC2 with SSM permissions
         Role ec2SsmRole = Role.Builder.create(this, "Ec2SsmRole")
                 .assumedBy(new ServicePrincipal("ec2.amazonaws.com"))
-                .managedPolicies(java.util.Arrays.asList(
+                .managedPolicies(List.of(
                         ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore")
                 ))
                 .build();
