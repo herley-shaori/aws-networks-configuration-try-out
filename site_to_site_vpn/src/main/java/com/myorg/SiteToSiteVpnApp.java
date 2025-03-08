@@ -49,6 +49,7 @@ public class SiteToSiteVpnApp {
                         .region("ap-southeast-3")
                         .build())
                 .build(), ec2AStack.getInstancePublicIp(), vpcA.getVpc(), vpcB.getVpc());
+
         vpnAStack.addDependency(ec2AStack);
         vpnAStack.addDependency(vpcB);
 
