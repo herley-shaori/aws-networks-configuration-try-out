@@ -8,19 +8,18 @@ import software.amazon.awscdk.StackProps;
 
 public final class Ec2BStack extends Stack {
 
-    public Ec2BStack(final Construct scope, final String id, final StackProps props, Vpc vpc) {
+    public Ec2BStack(final Construct scope, final String id, final StackProps props, Vpc vpcb, Vpc vpca) {
         super(scope, id, props);
 
         // Create Security Group for EC2 in VPC B
         SecurityGroup sg = SecurityGroup.Builder.create(this, "sg-ec2b")
-                .vpc(vpc)
+                .vpc(vpcb)
                 .allowAllOutbound(true)
                 .description("Security group for Ec2B instances")
                 .build();
 
         // Allow ICMP (ping) and SSH from VPC A's CIDR
-        sg.addIngressRule(Peer.ipv4("10.0.0.0/16"), Port.icmpPing(), "Allow ICMP from VPC A");
-        sg.addIngressRule(Peer.ipv4("10.0.0.0/16"), Port.tcp(22), "Allow SSH from VPC A");
+        sg.addIngressRule(Peer.ipv4(vpca.getVpcCidrBlock()), Port.allTraffic(), "Allow all traffic from VPC A");
 
         // Create IAM Role for EC2 with SSM permissions
         Role ec2SsmRole = Role.Builder.create(this, "Ec2SsmRole")
@@ -32,7 +31,7 @@ public final class Ec2BStack extends Stack {
 
         // Create EC2 instance in private subnet
         Instance ec2B = Instance.Builder.create(this, "Ec2B")
-                .vpc(vpc)
+                .vpc(vpcb)
                 .instanceType(InstanceType.of(InstanceClass.BURSTABLE3, InstanceSize.NANO)) // t3.nano
                 .machineImage(MachineImage.latestAmazonLinux2023())
                 .securityGroup(sg)

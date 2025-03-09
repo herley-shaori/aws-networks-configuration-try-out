@@ -8,7 +8,7 @@ import software.constructs.Construct;
 
 public final class VpnBStack extends Stack {
     private final CfnVPNGateway vpnGateway;
-    public VpnBStack(final Construct scope, final String id, final StackProps props, Vpc vpc, String customerGatewayId) {
+    public VpnBStack(final Construct scope, final String id, final StackProps props, Vpc vpcb, Vpc vpca, String customerGatewayId) {
         super(scope, id, props);
         // Create the VPN Gateway
         this.vpnGateway = CfnVPNGateway.Builder.create(this, "VgwB")
@@ -17,7 +17,7 @@ public final class VpnBStack extends Stack {
 
         // Attach the VPN Gateway to the VPC
         CfnVPCGatewayAttachment.Builder.create(this, "VpcBAttachment")
-                .vpcId(vpc.getVpcId())
+                .vpcId(vpcb.getVpcId())
                 .vpnGatewayId(vpnGateway.getRef())
                 .build();
 
@@ -32,12 +32,18 @@ public final class VpnBStack extends Stack {
                 .build();
 
         // Add route to VPC A's CIDR via VPN Gateway in VPC B's private subnet route table
-        vpc.getPrivateSubnets().forEach(subnet -> {
+        vpcb.getPrivateSubnets().forEach(subnet -> {
             CfnRoute.Builder.create(this, "RouteToVpcA")
                     .routeTableId(subnet.getRouteTable().getRouteTableId())
-                    .destinationCidrBlock("10.0.0.0/16") // CIDR VPC A
+                    .destinationCidrBlock(vpca.getVpcCidrBlock()) // CIDR VPC A
                     .gatewayId(this.vpnGateway.getAttrVpnGatewayId())
                     .build();
         });
+
+        // Tambahkan rute statis untuk VPC A
+//        CfnVPNConnectionRoute vpnRouteToVpcA = CfnVPNConnectionRoute.Builder.create(this, "VpnRouteToVpcA")
+//                .destinationCidrBlock(vpca.getVpcCidrBlock()) // CIDR VPC A
+//                .vpnConnectionId(vpnConnection.getRef())
+//                .build();
     }
 }

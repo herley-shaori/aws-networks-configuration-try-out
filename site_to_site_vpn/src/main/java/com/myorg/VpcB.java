@@ -17,13 +17,13 @@ public final class VpcB extends Stack {
         SubnetConfiguration privateSubnet = SubnetConfiguration.builder()
                 .name("PrivateSubnet")
                 .subnetType(SubnetType.PRIVATE_ISOLATED)
-                .cidrMask(24)
+                .cidrMask(27)
                 .build();
 
         // Create the VPC
         this.vpc = Vpc.Builder.create(this, "VpcB")
-                .ipAddresses(IpAddresses.cidr("172.16.0.0/16"))
-                .maxAzs(3)
+                .ipAddresses(IpAddresses.cidr("172.16.0.0/26"))
+                .maxAzs(1)
                 .subnetConfiguration(List.of(privateSubnet))
                 .build();
 

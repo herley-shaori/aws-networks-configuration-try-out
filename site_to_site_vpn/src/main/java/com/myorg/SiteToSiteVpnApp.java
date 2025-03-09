@@ -39,7 +39,7 @@ public class SiteToSiteVpnApp {
                         .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                         .region("ap-southeast-3")
                         .build())
-                .build(), vpcB.getVpc());
+                .build(), vpcB.getVpc(), vpcA.getVpc());
         ec2BStack.addDependency(vpcB);
 
         VpnAStack vpnAStack = new VpnAStack(app, "VpnAStack", StackProps.builder()
@@ -59,7 +59,7 @@ public class SiteToSiteVpnApp {
                         .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                         .region("ap-southeast-3")
                         .build())
-                .build(), vpcB.getVpc(), vpnAStack.getCustomerGatewayId());
+                .build(), vpcB.getVpc(), vpcA.getVpc(), vpnAStack.getCustomerGatewayId());
         vpnBStack.addDependency(ec2BStack);
 
         app.synth();
