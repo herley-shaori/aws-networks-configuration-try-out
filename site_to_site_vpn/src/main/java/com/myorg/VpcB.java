@@ -38,7 +38,4 @@ public final class VpcB extends Stack {
     public Vpc getVpc() {
         return vpc;
     }
-    public SubnetConfiguration getPrivateSubnet() {
-        return privateSubnet;
-    }
 }
