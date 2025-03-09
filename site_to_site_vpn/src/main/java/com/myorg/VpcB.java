@@ -12,13 +12,11 @@ import java.util.List;
 
 public final class VpcB extends Stack {
     private final Vpc vpc;
-    private final SubnetConfiguration privateSubnet;
-
     public VpcB(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
         // Define subnet configuration for the private subnet
-        privateSubnet = SubnetConfiguration.builder()
+        SubnetConfiguration privateSubnet = SubnetConfiguration.builder()
                 .name("PrivateSubnet")
                 .subnetType(SubnetType.PRIVATE_ISOLATED)
                 .cidrMask(27)
