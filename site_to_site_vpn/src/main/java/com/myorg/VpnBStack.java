@@ -44,13 +44,15 @@ public final class VpnBStack extends Stack {
         Tags.of(vpnConnection).add("Name", "VpnConnection");
 
         // Add route to VPC A's CIDR via VPN Gateway in VPC B's private subnet route table
-        int[] index = {0}; // To generate unique IDs
-        vpcb.getPrivateSubnets().forEach(subnet -> {
-            CfnRoute.Builder.create(this, "RouteToVpcA-" + index[0]++)
+        int[] index = {0};
+        vpcb.getIsolatedSubnets().forEach(subnet -> {
+            System.out.println("Adding route to subnet: " + subnet.getSubnetId() + ", RouteTable: " + subnet.getRouteTable().getRouteTableId());
+            CfnRoute route = CfnRoute.Builder.create(this, "RouteToVpcA-" + index[0]++)
                     .routeTableId(subnet.getRouteTable().getRouteTableId())
                     .destinationCidrBlock(vpca.getVpcCidrBlock())
                     .gatewayId(this.vpnGateway.getAttrVpnGatewayId())
                     .build();
+            route.addDependency(vpnGateway); // Ensure VPN Gateway is ready
         });
 
         // Tambahkan rute statis untuk VPC A

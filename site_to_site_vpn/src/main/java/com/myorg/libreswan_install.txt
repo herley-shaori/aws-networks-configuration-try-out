@@ -1,0 +1,6 @@
+sudo yum install libreswan -y
+sudo vi /etc/sysctl.conf
+sudo sysctl -p
+sudo vi /etc/ipsec.conf
+sudo vi /etc/ipsec.d/aws.conf
+sudo vi /etc/ipsec.d/aws.secrets

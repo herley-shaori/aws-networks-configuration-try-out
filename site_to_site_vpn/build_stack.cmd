@@ -1,1 +1,1 @@
-mvn clean package & cdk acknowledge 32775 & cdk synth & cdk deploy --require-approval never --all
+mvn clean package & cdk acknowledge 32775 & cdk deploy --require-approval never --all

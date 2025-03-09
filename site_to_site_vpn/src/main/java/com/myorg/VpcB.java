@@ -1,12 +1,13 @@
 package com.myorg;
 
-import software.amazon.awscdk.CfnTag;
-import software.amazon.awscdk.Tags;
-import software.constructs.Construct;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
-import software.amazon.awscdk.services.ec2.*;
-
+import software.amazon.awscdk.Tags;
+import software.amazon.awscdk.services.ec2.IpAddresses;
+import software.amazon.awscdk.services.ec2.SubnetConfiguration;
+import software.amazon.awscdk.services.ec2.SubnetType;
+import software.amazon.awscdk.services.ec2.Vpc;
+import software.constructs.Construct;
 import java.util.List;
 
 public final class VpcB extends Stack {
@@ -32,49 +33,6 @@ public final class VpcB extends Stack {
 
         // Add tags to the private subnet
         this.vpc.getIsolatedSubnets().forEach(subnet -> Tags.of(subnet).add("Name", "vpc-B-PrivateSubnet"));
-
-        CfnRouteTable privateRouteTable = CfnRouteTable.Builder.create(this, "PrivateRouteTable")
-                .vpcId(vpc.getVpcId())
-                .tags(List.of(CfnTag.builder()
-                        .key("Name")
-                        .value("vpc-B-Private-RouteTable")
-                        .build()))
-                .build();
-
-        // Add local route (automatically created, but making it explicit)
-        CfnRoute.Builder.create(this, "PrivateLocalRoute")
-                .routeTableId(privateRouteTable.getRef())
-                .destinationCidrBlock("10.0.0.0/26")  // VPC CIDR
-                .gatewayId("local")                   // Local route
-                .build();
-
-        // Associate the route table with the private subnet
-        ISubnet privateSubnetInstance = vpc.getIsolatedSubnets().get(0);
-        CfnSubnetRouteTableAssociation.Builder.create(this, "PrivateSubnetRouteTableAssociation")
-                .subnetId(privateSubnetInstance.getSubnetId())
-                .routeTableId(privateRouteTable.getRef())
-                .build();
-
-        // Create VPC Endpoints for SSM
-//        vpc.addInterfaceEndpoint("SsmVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-//                .service(InterfaceVpcEndpointAwsService.SSM)
-//                .privateDnsEnabled(true)
-//                .build());
-//
-//        vpc.addInterfaceEndpoint("SsmMessagesVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-//                .service(InterfaceVpcEndpointAwsService.SSM_MESSAGES)
-//                .privateDnsEnabled(true)
-//                .build());
-//
-//        vpc.addInterfaceEndpoint("Ec2MessagesVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-//                .service(InterfaceVpcEndpointAwsService.EC2_MESSAGES)
-//                .privateDnsEnabled(true)
-//                .build());
-//
-//        vpc.addInterfaceEndpoint("StsVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-//                .service(InterfaceVpcEndpointAwsService.STS)
-//                .privateDnsEnabled(true)
-//                .build());
     }
 
     public Vpc getVpc() {
