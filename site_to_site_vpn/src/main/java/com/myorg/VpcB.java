@@ -1,5 +1,6 @@
 package com.myorg;
 
+import software.amazon.awscdk.Tags;
 import software.constructs.Construct;
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
@@ -22,31 +23,34 @@ public final class VpcB extends Stack {
 
         // Create the VPC
         this.vpc = Vpc.Builder.create(this, "VpcB")
-                .ipAddresses(IpAddresses.cidr("172.16.0.0/26"))
+                .ipAddresses(IpAddresses.cidr("10.0.0.0/26"))
                 .maxAzs(1)
                 .subnetConfiguration(List.of(privateSubnet))
                 .build();
 
+        // Add tags to the private subnet
+        this.vpc.getIsolatedSubnets().forEach(subnet -> Tags.of(subnet).add("Name", "vpc-B-PrivateSubnet"));
+
         // Create VPC Endpoints for SSM
-        vpc.addInterfaceEndpoint("SsmVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-                .service(InterfaceVpcEndpointAwsService.SSM)
-                .privateDnsEnabled(true)
-                .build());
-
-        vpc.addInterfaceEndpoint("SsmMessagesVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-                .service(InterfaceVpcEndpointAwsService.SSM_MESSAGES)
-                .privateDnsEnabled(true)
-                .build());
-
-        vpc.addInterfaceEndpoint("Ec2MessagesVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-                .service(InterfaceVpcEndpointAwsService.EC2_MESSAGES)
-                .privateDnsEnabled(true)
-                .build());
-
-        vpc.addInterfaceEndpoint("StsVpcEndpoint", InterfaceVpcEndpointOptions.builder()
-                .service(InterfaceVpcEndpointAwsService.STS)
-                .privateDnsEnabled(true)
-                .build());
+//        vpc.addInterfaceEndpoint("SsmVpcEndpoint", InterfaceVpcEndpointOptions.builder()
+//                .service(InterfaceVpcEndpointAwsService.SSM)
+//                .privateDnsEnabled(true)
+//                .build());
+//
+//        vpc.addInterfaceEndpoint("SsmMessagesVpcEndpoint", InterfaceVpcEndpointOptions.builder()
+//                .service(InterfaceVpcEndpointAwsService.SSM_MESSAGES)
+//                .privateDnsEnabled(true)
+//                .build());
+//
+//        vpc.addInterfaceEndpoint("Ec2MessagesVpcEndpoint", InterfaceVpcEndpointOptions.builder()
+//                .service(InterfaceVpcEndpointAwsService.EC2_MESSAGES)
+//                .privateDnsEnabled(true)
+//                .build());
+//
+//        vpc.addInterfaceEndpoint("StsVpcEndpoint", InterfaceVpcEndpointOptions.builder()
+//                .service(InterfaceVpcEndpointAwsService.STS)
+//                .privateDnsEnabled(true)
+//                .build());
     }
 
     public Vpc getVpc() {

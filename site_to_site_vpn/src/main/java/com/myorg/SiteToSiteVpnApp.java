@@ -16,6 +16,14 @@ public class SiteToSiteVpnApp {
                         .build())
                 .build());
 
+        VpcB vpcB = new VpcB(app, "vpcB", StackProps.builder()
+                .description("VPC B for the Site-to-Site VPN setup")
+                .env(Environment.builder()
+                        .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
+                        .region("ap-southeast-3")
+                        .build())
+                .build());
+
         Ec2AStack ec2AStack = new Ec2AStack(app, "Ec2AStack", StackProps.builder()
                 .description("EC2 A Stack")
                 .env(Environment.builder()
@@ -24,14 +32,6 @@ public class SiteToSiteVpnApp {
                         .build())
                 .build(), vpcA.getVpc());
         ec2AStack.addDependency(vpcA);
-
-        VpcB vpcB = new VpcB(app, "vpcB", StackProps.builder()
-                .description("VPC B for the Site-to-Site VPN setup")
-                .env(Environment.builder()
-                        .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
-                        .region("ap-southeast-3")
-                        .build())
-                .build());
 
         Ec2BStack ec2BStack = new Ec2BStack(app, "Ec2BStack", StackProps.builder()
                 .description("EC2 B Stack")
@@ -42,25 +42,14 @@ public class SiteToSiteVpnApp {
                 .build(), vpcB.getVpc(), vpcA.getVpc());
         ec2BStack.addDependency(vpcB);
 
-        VpnAStack vpnAStack = new VpnAStack(app, "VpnAStack", StackProps.builder()
-                .description("VPN A Stack")
-                .env(Environment.builder()
-                        .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
-                        .region("ap-southeast-3")
-                        .build())
-                .build(), ec2AStack.getInstancePublicIp(), vpcA.getVpc(), vpcB.getVpc());
-
-        vpnAStack.addDependency(ec2AStack);
-        vpnAStack.addDependency(vpcB);
-
         VpnBStack vpnBStack = new VpnBStack(app, "VpnBStack", StackProps.builder()
                 .description("VPN B Stack.")
                 .env(Environment.builder()
                         .account(System.getenv("CDK_DEFAULT_ACCOUNT"))
                         .region("ap-southeast-3")
                         .build())
-                .build(), vpcB.getVpc(), vpcA.getVpc(), vpnAStack.getCustomerGatewayId());
-        vpnBStack.addDependency(ec2BStack);
+                .build(), vpcB.getVpc(), vpcA.getVpc(), ec2AStack.getInstancePublicIp());
+        vpnBStack.addDependency(ec2AStack);
 
         app.synth();
     }

@@ -8,7 +8,8 @@ import software.constructs.Construct;
 
 public final class VpnBStack extends Stack {
     private final CfnVPNGateway vpnGateway;
-    public VpnBStack(final Construct scope, final String id, final StackProps props, Vpc vpcb, Vpc vpca, String customerGatewayId) {
+    private final CfnCustomerGateway customerGateway;
+    public VpnBStack(final Construct scope, final String id, final StackProps props, Vpc vpcb, Vpc vpca, String ec2APublicIp) {
         super(scope, id, props);
         // Create the VPN Gateway
         this.vpnGateway = CfnVPNGateway.Builder.create(this, "VgwB")
@@ -23,13 +24,24 @@ public final class VpnBStack extends Stack {
 
         Tags.of(vpnGateway).add("Name", "VpnGatewayB");
 
+        this.customerGateway = CfnCustomerGateway.Builder.create(this, "CustomerGateway")
+                .ipAddress(ec2APublicIp)
+                .type("ipsec.1")
+                .bgpAsn(65000)
+                .build();
+        Tags.of(customerGateway).add("Name", "CustomerGatewayA");
+
         // Now you can use vpnGatewayId when creating the VPN Connection and routes
         CfnVPNConnection vpnConnection = CfnVPNConnection.Builder.create(this, "VpnConnectionB")
-                .customerGatewayId(customerGatewayId) // from VpnAStack.
+                .customerGatewayId(this.customerGateway.getAttrCustomerGatewayId()) // from VpnAStack.
                 .vpnGatewayId(this.vpnGateway.getAttrVpnGatewayId())           // from VpcB.
                 .type("ipsec.1")
                 .staticRoutesOnly(true)               // Static routing karena tidak ada BGP.
+                .localIpv4NetworkCidr(vpca.getVpcCidrBlock())
+                .remoteIpv4NetworkCidr(vpcb.getVpcCidrBlock())
                 .build();
+
+        Tags.of(vpnConnection).add("Name", "VpnConnection");
 
         // Add route to VPC A's CIDR via VPN Gateway in VPC B's private subnet route table
         vpcb.getPrivateSubnets().forEach(subnet -> {
@@ -41,9 +53,9 @@ public final class VpnBStack extends Stack {
         });
 
         // Tambahkan rute statis untuk VPC A
-//        CfnVPNConnectionRoute vpnRouteToVpcA = CfnVPNConnectionRoute.Builder.create(this, "VpnRouteToVpcA")
-//                .destinationCidrBlock(vpca.getVpcCidrBlock()) // CIDR VPC A
-//                .vpnConnectionId(vpnConnection.getRef())
-//                .build();
+        CfnVPNConnectionRoute vpnRouteToVpcA = CfnVPNConnectionRoute.Builder.create(this, "VpnRouteToVpcA")
+                .destinationCidrBlock(vpca.getVpcCidrBlock()) // CIDR VPC A
+                .vpnConnectionId(vpnConnection.getRef())
+                .build();
     }
 }
