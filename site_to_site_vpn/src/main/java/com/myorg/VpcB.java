@@ -1,5 +1,6 @@
 package com.myorg;
 
+import software.amazon.awscdk.CfnTag;
 import software.amazon.awscdk.Tags;
 import software.constructs.Construct;
 import software.amazon.awscdk.Stack;
@@ -10,12 +11,13 @@ import java.util.List;
 
 public final class VpcB extends Stack {
     private final Vpc vpc;
+    private final SubnetConfiguration privateSubnet;
 
     public VpcB(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
         // Define subnet configuration for the private subnet
-        SubnetConfiguration privateSubnet = SubnetConfiguration.builder()
+        privateSubnet = SubnetConfiguration.builder()
                 .name("PrivateSubnet")
                 .subnetType(SubnetType.PRIVATE_ISOLATED)
                 .cidrMask(27)
@@ -30,6 +32,28 @@ public final class VpcB extends Stack {
 
         // Add tags to the private subnet
         this.vpc.getIsolatedSubnets().forEach(subnet -> Tags.of(subnet).add("Name", "vpc-B-PrivateSubnet"));
+
+        CfnRouteTable privateRouteTable = CfnRouteTable.Builder.create(this, "PrivateRouteTable")
+                .vpcId(vpc.getVpcId())
+                .tags(List.of(CfnTag.builder()
+                        .key("Name")
+                        .value("vpc-B-Private-RouteTable")
+                        .build()))
+                .build();
+
+        // Add local route (automatically created, but making it explicit)
+        CfnRoute.Builder.create(this, "PrivateLocalRoute")
+                .routeTableId(privateRouteTable.getRef())
+                .destinationCidrBlock("10.0.0.0/26")  // VPC CIDR
+                .gatewayId("local")                   // Local route
+                .build();
+
+        // Associate the route table with the private subnet
+        ISubnet privateSubnetInstance = vpc.getIsolatedSubnets().get(0);
+        CfnSubnetRouteTableAssociation.Builder.create(this, "PrivateSubnetRouteTableAssociation")
+                .subnetId(privateSubnetInstance.getSubnetId())
+                .routeTableId(privateRouteTable.getRef())
+                .build();
 
         // Create VPC Endpoints for SSM
 //        vpc.addInterfaceEndpoint("SsmVpcEndpoint", InterfaceVpcEndpointOptions.builder()
@@ -55,5 +79,8 @@ public final class VpcB extends Stack {
 
     public Vpc getVpc() {
         return vpc;
+    }
+    public SubnetConfiguration getPrivateSubnet() {
+        return privateSubnet;
     }
 }

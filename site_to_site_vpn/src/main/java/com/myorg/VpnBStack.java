@@ -44,10 +44,11 @@ public final class VpnBStack extends Stack {
         Tags.of(vpnConnection).add("Name", "VpnConnection");
 
         // Add route to VPC A's CIDR via VPN Gateway in VPC B's private subnet route table
+        int[] index = {0}; // To generate unique IDs
         vpcb.getPrivateSubnets().forEach(subnet -> {
-            CfnRoute.Builder.create(this, "RouteToVpcA")
+            CfnRoute.Builder.create(this, "RouteToVpcA-" + index[0]++)
                     .routeTableId(subnet.getRouteTable().getRouteTableId())
-                    .destinationCidrBlock(vpca.getVpcCidrBlock()) // CIDR VPC A
+                    .destinationCidrBlock(vpca.getVpcCidrBlock())
                     .gatewayId(this.vpnGateway.getAttrVpnGatewayId())
                     .build();
         });
