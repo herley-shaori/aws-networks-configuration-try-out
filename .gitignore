@@ -1,2 +1,17 @@
 .idea
 site_to_site_vpn/target
+.terraform
+
+# Terraform state files
+*.tfstate
+*.tfstate.backup
+.terraform.tfstate.lock.info
+
+# Local crash logs and override files
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+
+# Do NOT ignore:
+# .terraform.lock.hcl
