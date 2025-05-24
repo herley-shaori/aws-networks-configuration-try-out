@@ -111,6 +111,4 @@ This confirms that:
 	•	The Lambda code always returns a 200.
 	•	The private API Gateway integration and VPC endpoint are correctly routing calls into your VPC.
 
-⸻
-
 👍 All set! You now have an internally-accessible API backed by Lambdas in a private subnet, with full VPC-endpoint security and logging enabled.
