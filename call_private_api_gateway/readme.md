@@ -106,9 +106,3 @@ Once everything is applied, invoking the frontend Lambda directly (e.g. via the 
   "statusCode": 200,
   "body": "{\"message\": \"Hello from frontend Lambda!\"}"
 }
-
-This confirms that:
-	•	The Lambda code always returns a 200.
-	•	The private API Gateway integration and VPC endpoint are correctly routing calls into your VPC.
-
-👍 All set! You now have an internally-accessible API backed by Lambdas in a private subnet, with full VPC-endpoint security and logging enabled.
