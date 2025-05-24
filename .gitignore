@@ -12,6 +12,7 @@ crash.log
 override.tf
 override.tf.json
 *_override.tf
+*.zip
 
 # Do NOT ignore:
 # .terraform.lock.hcl
