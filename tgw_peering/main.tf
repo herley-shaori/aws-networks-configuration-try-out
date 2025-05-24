@@ -8,6 +8,12 @@ terraform {
   required_version = ">= 1.0"
 }
 
+variable "enable_tgw_connection" {
+  description = "Toggle TGW connectivity between VPC A and VPC B"
+  type        = bool
+  default     = true
+}
+
 provider "aws" {
   region = "ap-southeast-3"
 }
@@ -62,10 +68,6 @@ resource "aws_route_table" "rt_a_internet" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw_a.id
   }
-  route {
-    cidr_block         = aws_vpc.vpc_b.cidr_block
-    transit_gateway_id = aws_ec2_transit_gateway.tgw.id
-  }
   tags = { Name = "rt-a-internet" }
 }
 resource "aws_route_table" "rt_b_internet" {
@@ -73,10 +75,6 @@ resource "aws_route_table" "rt_b_internet" {
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw_b.id
-  }
-  route {
-    cidr_block         = aws_vpc.vpc_a.cidr_block
-    transit_gateway_id = aws_ec2_transit_gateway.tgw.id
   }
   tags = { Name = "rt-b-internet" }
 }
@@ -87,6 +85,20 @@ resource "aws_route_table_association" "a_internet" {
 resource "aws_route_table_association" "b_internet" {
   subnet_id      = aws_subnet.subnet_b.id
   route_table_id = aws_route_table.rt_b_internet.id
+}
+
+resource "aws_route" "a_to_tgw" {
+  count = var.enable_tgw_connection ? 1 : 0
+  route_table_id         = aws_route_table.rt_a_internet.id
+  destination_cidr_block = aws_vpc.vpc_b.cidr_block
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
+}
+
+resource "aws_route" "b_to_tgw" {
+  count = var.enable_tgw_connection ? 1 : 0
+  route_table_id         = aws_route_table.rt_b_internet.id
+  destination_cidr_block = aws_vpc.vpc_a.cidr_block
+  transit_gateway_id     = aws_ec2_transit_gateway.tgw.id
 }
 
 # Create one Transit Gateway (TGW)
@@ -123,11 +135,13 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "attach_b" {
 
 # Add static routes pointing to attachments
 resource "aws_ec2_transit_gateway_route" "a_to_b" {
+  count                           = var.enable_tgw_connection ? 1 : 0
   destination_cidr_block          = aws_vpc.vpc_b.cidr_block
   transit_gateway_route_table_id  = data.aws_ec2_transit_gateway_route_table.default.id
   transit_gateway_attachment_id   = aws_ec2_transit_gateway_vpc_attachment.attach_b.id
 }
 resource "aws_ec2_transit_gateway_route" "b_to_a" {
+  count                           = var.enable_tgw_connection ? 1 : 0
   destination_cidr_block          = aws_vpc.vpc_a.cidr_block
   transit_gateway_route_table_id  = data.aws_ec2_transit_gateway_route_table.default.id
   transit_gateway_attachment_id   = aws_ec2_transit_gateway_vpc_attachment.attach_a.id
