@@ -1,10 +1,9 @@
-##################################################################
-# main.tf
-##################################################################
-
-# ----------------------------------------
+# ----------------------------------------------------------
+# main.tf - AWS Transit Gateway Peering: Jakarta <-> Singapore
+# ----------------------------------------------------------
+# ----------------------------------------------------------
 # PROVIDERS
-# ----------------------------------------
+# ----------------------------------------------------------
 provider "aws" {
   region = "ap-southeast-3"              # Jakarta
 }
@@ -14,15 +13,15 @@ provider "aws" {
   region = "ap-southeast-1"              # Singapore
 }
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # DATA
-# ----------------------------------------
+# ----------------------------------------------------------
 # needed for TGW peering within same account
 data "aws_caller_identity" "me" {}
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # JAKARTA VPC + PUBLIC SUBNET
-# ----------------------------------------
+# ----------------------------------------------------------
 resource "aws_vpc" "jakarta" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
@@ -72,9 +71,9 @@ resource "aws_route" "jakarta_to_sg_via_tgw" {
   transit_gateway_id     = aws_ec2_transit_gateway.jakarta_tgw.id
 }
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # SINGAPORE VPC + PUBLIC SUBNET
-# ----------------------------------------
+# ----------------------------------------------------------
 resource "aws_vpc" "singapore" {
   provider             = aws.sg
   cidr_block           = "10.1.0.0/16"
@@ -131,9 +130,9 @@ resource "aws_route" "sg_to_jakarta_via_tgw" {
   transit_gateway_id     = aws_ec2_transit_gateway.singapore_tgw.id
 }
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # TRANSIT GATEWAYS
-# ----------------------------------------
+# ----------------------------------------------------------
 resource "aws_ec2_transit_gateway" "jakarta_tgw" {
   description = "Jakarta TGW"
   tags = {
@@ -149,9 +148,9 @@ resource "aws_ec2_transit_gateway" "singapore_tgw" {
   }
 }
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # TGW VPC ATTACHMENTS (one subnet each)
-# ----------------------------------------
+# ----------------------------------------------------------
 resource "aws_ec2_transit_gateway_vpc_attachment" "jakarta_attach" {
   transit_gateway_id = aws_ec2_transit_gateway.jakarta_tgw.id
   vpc_id             = aws_vpc.jakarta.id
@@ -171,9 +170,9 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "singapore_attach" {
   }
 }
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # TGW PEERING
-# ----------------------------------------
+# ----------------------------------------------------------
 resource "aws_ec2_transit_gateway_peering_attachment" "jk_sg_peering" {
   transit_gateway_id      = aws_ec2_transit_gateway.jakarta_tgw.id
   peer_transit_gateway_id = aws_ec2_transit_gateway.singapore_tgw.id
@@ -192,7 +191,6 @@ resource "aws_ec2_transit_gateway_peering_attachment_accepter" "jk_sg_peering_ac
   }
 }
 
-
 # Fetch Jakarta TGW’s default association route table
 data "aws_ec2_transit_gateway_route_table" "jakarta_default_rt" {
   filter {
@@ -205,13 +203,12 @@ data "aws_ec2_transit_gateway_route_table" "jakarta_default_rt" {
   }
 }
 
-# — Jakata TGW’s default route table & static route to Singapore —
+# -- Jakarta TGW’s Default Route Table & Static Route to Singapore --
 resource "aws_ec2_transit_gateway_route" "jakarta_to_singapore" {
   transit_gateway_route_table_id    = data.aws_ec2_transit_gateway_route_table.jakarta_default_rt.id
   destination_cidr_block            = aws_vpc.singapore.cidr_block
   transit_gateway_attachment_id     = aws_ec2_transit_gateway_peering_attachment.jk_sg_peering.id
 }
-
 
 # Fetch Singapore TGW’s default association route table
 data "aws_ec2_transit_gateway_route_table" "singapore_default_rt" {
@@ -226,7 +223,7 @@ data "aws_ec2_transit_gateway_route_table" "singapore_default_rt" {
   }
 }
 
-# — Singapore TGW’s default route table & static route to Jakarta —
+# -- Singapore TGW’s Default Route Table & Static Route to Jakarta --
 resource "aws_ec2_transit_gateway_route" "singapore_to_jakarta" {
   provider                          = aws.sg
   transit_gateway_route_table_id     = data.aws_ec2_transit_gateway_route_table.singapore_default_rt.id
@@ -234,9 +231,9 @@ resource "aws_ec2_transit_gateway_route" "singapore_to_jakarta" {
   transit_gateway_attachment_id     = aws_ec2_transit_gateway_peering_attachment.jk_sg_peering.id
 }
 
-# ----------------------------------------
+# ----------------------------------------------------------
 # EC2 INSTANCES FOR TESTING (NO KEY_PAIR, EC2 INSTANCE CONNECT)
-# ----------------------------------------
+# ----------------------------------------------------------
 
 # Jakarta: AMI lookup for Amazon Linux 2
 data "aws_ami" "amzn2_jakarta" {
