@@ -109,6 +109,35 @@ resource "aws_route_table_association" "public_b2" {
 }
 
 # -------------------------------------------------------------------
+# 8. VPC Peering between VPC A and VPC B
+# -------------------------------------------------------------------
+resource "aws_vpc_peering_connection" "a_to_b" {
+  vpc_id        = aws_vpc.vpc_a.id
+  peer_vpc_id   = aws_vpc.vpc_b.id
+  auto_accept   = true
+  tags = {
+    Name = "vpc-peering-a-b"
+  }
+}
+
+# -------------------------------------------------------------------
+# 9. Routes for Peering Connection
+# -------------------------------------------------------------------
+# In VPC A's route table, send B's CIDR through the peering connection
+resource "aws_route" "route_a_to_b" {
+  route_table_id            = aws_route_table.public_a.id
+  destination_cidr_block    = aws_vpc.vpc_b.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.a_to_b.id
+}
+
+# In VPC B's route table, send A's CIDR through the peering connection
+resource "aws_route" "route_b_to_a" {
+  route_table_id            = aws_route_table.public_b.id
+  destination_cidr_block    = aws_vpc.vpc_a.cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.a_to_b.id
+}
+
+# -------------------------------------------------------------------
 # 2. Security Groups for Resolver Endpoints
 # -------------------------------------------------------------------
 resource "aws_security_group" "r53_inbound_sg" {
