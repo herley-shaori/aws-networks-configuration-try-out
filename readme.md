@@ -1,5 +1,3 @@
-Here’s the same README re-written with proper Markdown headings, bulleted lists, and code blocks for clarity:
-
 # AWS Networks Configuration Try Out 🚀
 
 This repository contains Terraform–based examples to explore and validate various AWS networking scenarios. Each folder is a self-contained project demonstrating a specific network configuration, complete with resources, routing, and connectivity tests. 🌐
