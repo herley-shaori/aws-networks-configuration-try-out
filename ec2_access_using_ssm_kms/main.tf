@@ -11,10 +11,6 @@ provider "aws" {
   region = var.region
 }
 
-#───────────────────────────────────────────────────────────────────────────────
-# Autosetup: VPC, Subnets, Security Group
-#───────────────────────────────────────────────────────────────────────────────
-
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "main" {
@@ -36,20 +32,6 @@ resource "aws_subnet" "private" {
   }
 }
 
-resource "aws_security_group" "instance_sg" {
-  name        = "autosetup-instance-sg"
-  description = "Allow necessary outbound for SSM"
-  vpc_id      = aws_vpc.main.id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-# used for building the VPC endpoint service names
 data "aws_region" "current" {}
 
 #───────────────────────────────────────────────────────────────────────────────
@@ -75,13 +57,11 @@ resource "aws_iam_role" "ssm_managed_instance" {
   name = "ssm-managed-instance-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect    = "Allow"
-        Principal = { Service = "ec2.amazonaws.com" }
-        Action    = "sts:AssumeRole"
-      }
-    ]
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
   })
 }
 
@@ -99,16 +79,48 @@ resource "aws_iam_instance_profile" "ssm_profile" {
 # (Optional) Interface VPC Endpoints for SSM
 # so your private‐subnet EC2 can reach SSM without NAT/Internet
 #───────────────────────────────────────────────────────────────────────────────
-resource "aws_security_group" "vpce_sg" {
-  name        = "vpce-ssm-sg"
-  description = "Allow outbound TLS to SSM endpoints"
+resource "aws_security_group" "instance_sg" {
+  name        = "autosetup-instance-sg"
+  description = "Allow necessary outbound for SSM"
   vpc_id      = aws_vpc.main.id
 
   egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
+  }
+}
+
+resource "aws_security_group" "ssm_sg" {
+  name        = "autosetup-ssm-sg"
+  description = "Allow intra-VPC and SSM endpoint traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    self            = true
+  }
+  ingress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = [aws_vpc.main.cidr_block]
+  }
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
   }
 }
 
@@ -126,8 +138,8 @@ resource "aws_vpc_endpoint" "ssm_eps" {
   service_name        = "com.amazonaws.${data.aws_region.current.name}.${each.key}"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = aws_subnet.private[*].id
-  security_group_ids  = [aws_security_group.vpce_sg.id]
-  private_dns_enabled = each.key == "ssm" ? true : false
+  security_group_ids  = [aws_security_group.instance_sg.id]
+  private_dns_enabled = true
 }
 
 #───────────────────────────────────────────────────────────────────────────────
@@ -139,17 +151,11 @@ resource "aws_instance" "private_ssm" {
   subnet_id                   = aws_subnet.private[0].id
   iam_instance_profile        = aws_iam_instance_profile.ssm_profile.name
   associate_public_ip_address = false
-
-  vpc_security_group_ids = [
-    aws_security_group.instance_sg.id,
-    aws_security_group.vpce_sg.id,
-  ]
+  vpc_security_group_ids      = [aws_security_group.instance_sg.id]
 
   root_block_device {
     volume_size = 8
     volume_type = "gp3"
-    encrypted   = true
-    kms_key_id  = data.aws_kms_alias.use_case_key.target_key_arn
   }
 
   tags = {
